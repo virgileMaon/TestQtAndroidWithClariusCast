@@ -1,0 +1,120 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.0.2'
+    }
+}
+
+plugins {
+    id "de.undercouch.download" version "5.3.0"
+}
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+apply plugin: 'com.android.application'
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+}
+
+tasks.register("downloadCastRelease",Download) {
+    src "https://github.com/clariusdev/cast/releases/download/v10.0.0/cast-10.0.0-android.arm64-v8a.aar"
+    dest "src/cast.arm64-v8a.aar"
+    overwrite false
+}
+tasks.register("unpackCastClassesJar",Copy) {
+    dependsOn tasks.downloadCastRelease
+    group 'Build'
+    description 'Copy Cast classes.jar'
+    from(zipTree("src/cast.arm64-v8a.aar")) {
+        include "classes.jar"  
+        eachFile { fcd ->
+            fcd.setName("cast_classes.jar")  
+        }
+        includeEmptyDirs = false  
+    }
+    into layout.projectDirectory.dir("libs")
+}
+preBuild.dependsOn unpackCastClassesJar
+
+tasks.register("unpackCastSO",Copy) {
+    dependsOn tasks.downloadCastRelease
+    group 'Build'
+    description 'Copy Cast shared object'
+    from(zipTree("src/cast.arm64-v8a.aar")) {
+        include "jni/arm64-v8a/libcast_android.so"  
+        eachFile { fcd ->
+            fcd.relativePath = new RelativePath(true, fcd.relativePath.segments.drop(2))  
+        }
+        includeEmptyDirs = false  
+    }
+    into layout.projectDirectory.dir("libs").dir("arm64-v8a")
+}
+preBuild.dependsOn unpackCastSO
+
+android {
+    /*******************************************************
+     * The following variables:
+     * - androidBuildToolsVersion,
+     * - androidCompileSdkVersion
+     * - qtAndroidDir - holds the path to qt android files
+     *                   needed to build any Qt application
+     *                   on Android.
+     *
+     * are defined in gradle.properties file. This file is
+     * updated by QtCreator and androiddeployqt tools.
+     * Changing them manually might break the compilation!
+     *******************************************************/
+
+    compileSdkVersion androidCompileSdkVersion.toInteger()
+    buildToolsVersion androidBuildToolsVersion
+    ndkVersion androidNdkVersion
+
+    // Extract native libraries from the APK
+    packagingOptions.jniLibs.useLegacyPackaging true
+
+    sourceSets {
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+            java.srcDirs = [qtAndroidDir + '/src', 'src', 'java']
+            aidl.srcDirs = [qtAndroidDir + '/src', 'src', 'aidl']
+            res.srcDirs = [qtAndroidDir + '/res', 'res']
+            resources.srcDirs = ['resources']
+            renderscript.srcDirs = ['src']
+            assets.srcDirs = ['assets']
+            jniLibs.srcDirs = ['libs']
+       }
+    }
+
+    tasks.withType(JavaCompile) {
+        options.incremental = true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+
+    // Do not compress Qt binary resources file
+    aaptOptions {
+        noCompress 'rcc'
+    }
+
+    defaultConfig {
+        resConfig "en"
+        minSdkVersion qtMinSdkVersion
+        targetSdkVersion qtTargetSdkVersion
+        ndk.abiFilters = qtTargetAbiList.split(",")
+    }
+}
