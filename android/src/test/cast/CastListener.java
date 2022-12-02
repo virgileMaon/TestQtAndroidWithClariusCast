@@ -20,6 +20,11 @@ class CastListener implements Cast.Listener {
     }
 
     @Override
+    public void buttonPressed(Button button, int i) {
+
+    }
+
+    @Override
     public void error(String s) {
         Log.e(TAG, s);
     }
@@ -28,19 +33,6 @@ class CastListener implements Cast.Listener {
     public void freeze(boolean b) {
     }
 
-    @Override
-    public void initializationResult(boolean result) {
-        Log.d(TAG, String.format("initializationResult %b", result));
-    }
-
-    @Override
-    public void connectionResult(boolean b) {
-        Log.d(TAG, String.format("connectionResult %b", b));
-    }
-
-    @Override
-    public void disconnectionResult(boolean b) {
-    }
 
     @Override
     public void newProcessedImage(ByteBuffer byteBuffer, ProcessedImageInfo processedImageInfo, PosInfo[] posInfos) {
@@ -58,21 +50,7 @@ class CastListener implements Cast.Listener {
     }
 
     @Override
-    public void firmwareVersionRetrieved(Optional<String> optional, Object o) {
-
-    }
-
-    @Override
-    public void probeInfoRetrieved(Optional<ProbeInfo> optional, Object o) {
-
-    }
-
-    @Override
-    public void userFunctionResult(boolean b, Object o) {
-    }
-
-    @Override
-    public void buttonPressed(Button button, int i) {
-
+    public void progress(int progress) {
+        
     }
 }

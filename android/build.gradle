@@ -25,15 +25,21 @@ dependencies {
 }
 
 tasks.register("downloadCastRelease",Download) {
-    src "https://github.com/clariusdev/cast/releases/download/v10.0.0/cast-10.0.0-android.arm64-v8a.aar"
-    dest "src/cast.arm64-v8a.aar"
+    src "https://github.com/clariusdev/cast/releases/download/v10.1.1/cast-10.1.1-android.arm64-v8a.zip"
+    
+    dest "src/cast.arm64-v8a.zip"
     overwrite false
 }
-tasks.register("unpackCastClassesJar",Copy) {
+tasks.register("unzipCastRelease",Copy) {
     dependsOn tasks.downloadCastRelease
+    from zipTree("src/cast.arm64-v8a.zip")
+    into "src/"
+}
+tasks.register("unpackCastClassesJar",Copy) {
+    dependsOn tasks.unzipCastRelease
     group 'Build'
     description 'Copy Cast classes.jar'
-    from(zipTree("src/cast.arm64-v8a.aar")) {
+    from(zipTree("src/cast-release.aar")) {
         include "classes.jar"  
         eachFile { fcd ->
             fcd.setName("cast_classes.jar")  
@@ -45,10 +51,10 @@ tasks.register("unpackCastClassesJar",Copy) {
 preBuild.dependsOn unpackCastClassesJar
 
 tasks.register("unpackCastSO",Copy) {
-    dependsOn tasks.downloadCastRelease
+    dependsOn tasks.unzipCastRelease
     group 'Build'
     description 'Copy Cast shared object'
-    from(zipTree("src/cast.arm64-v8a.aar")) {
+    from(zipTree("src/cast-release.aar")) {
         include "jni/arm64-v8a/libcast_android.so"  
         eachFile { fcd ->
             fcd.relativePath = new RelativePath(true, fcd.relativePath.segments.drop(2))  

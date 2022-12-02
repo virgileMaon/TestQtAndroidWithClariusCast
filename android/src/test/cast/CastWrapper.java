@@ -45,7 +45,7 @@ public class CastWrapper {
                 return false;
             }
         }
-        return false;
+        return true;
     }
 
     private boolean execute(Callable<Boolean> task) {
