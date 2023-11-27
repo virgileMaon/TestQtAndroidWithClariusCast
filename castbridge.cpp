@@ -6,6 +6,11 @@ CastBridge::CastBridge(QObject *parent)
 
 }
 
+void CastBridge::connect(QString ip, int port, long networkID, QString certificate)
+{
+    lowConnect(ip,port,networkID,certificate);
+}
+
 bool CastBridge::create(bool anotherThread) {
     return lowCreate(anotherThread);
 }

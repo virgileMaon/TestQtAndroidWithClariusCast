@@ -8,10 +8,13 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
+import java.util.Optional;
 
 import me.clarius.sdk.Cast;
 
 public class CastWrapper {
+    public static native void onConnected(boolean isConnected, long obj);
+
     private static final String TAG="CastWrapper";
     private Cast cast;
     private final ExecutorService pool;
@@ -48,6 +51,34 @@ public class CastWrapper {
         return true;
     }
 
+    private Boolean innerConnect(String ipAddress, int tcpport, long networkID, String certificate){
+        if (cast != null)
+        {
+            System.out.println("ipAddress "+ipAddress);
+            System.out.println("tcpport "+tcpport);
+            System.out.println("networkID "+networkID);
+            System.out.println("networkID "+certificate);
+
+            try {
+                Optional<Long> opNetworkId = Optional.ofNullable(networkID);//Utils.maybeLong(networkID);
+                cast.connect(ipAddress, tcpport, opNetworkId, certificate, (result, port, swRevMatch) -> {
+                     System.out.println("result "+result);
+                    Log.d(TAG, "Connection result: " + result);
+                    if (result) {
+                        Log.d(TAG, "UDP stream will be on port " + port);
+                        Log.d(TAG, "App software " + (swRevMatch ? "matches" : "does not match"));
+                    }
+                });
+
+                return true;
+            } catch (Throwable e) {
+                Log.e(TAG, "Failed connect cast", e);
+                return false;
+            }
+        }
+        return false;
+    }
+
     private boolean execute(Callable<Boolean> task) {
         
         if (pool != null) {
@@ -71,6 +102,19 @@ public class CastWrapper {
         }
     }
 
+    public boolean connect(String ipAddress, int port, long networkID, String certificate ){
+        Callable<Boolean> callable = () -> innerConnect(ipAddress, port, networkID, certificate);
+        return execute(callable);
+    }
+
+    public boolean test(String tt, int port, long networkID, long obj){
+           System.out.println("tt "+tt);
+           System.out.println("port "+port);
+           System.out.println("port "+networkID);
+           onConnected(false, obj);
+           return true;
+    }
+
     public boolean createCast(Context ctx) {
         Callable<Boolean> callable = () -> innerCreateCast(ctx);
         return execute(callable);
@@ -79,4 +123,5 @@ public class CastWrapper {
         Callable<Boolean> callable = () -> innerReleaseCast();
         return execute(callable);
     }
+
 }
